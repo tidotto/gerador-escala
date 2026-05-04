@@ -457,102 +457,114 @@
 
         @media print {
             @page {
-                size: A4 landscape;
-                margin: 1cm;
+                size: A4 portrait;
+                margin: 0.5cm;
             }
 
-            body {
+            html, body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
                 background: #fff !important;
                 color: #000 !important;
-                display: block !important;
             }
 
-            .sidebar, .actions-bar button, #noDataMessage, .header-main {
+            .sidebar, .actions-bar button, #noDataMessage, .header-main, .remove-holiday {
                 display: none !important;
             }
 
             .main-content {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 98vh !important;
                 padding: 0 !important;
-                max-width: 100% !important;
                 margin: 0 !important;
+                max-width: 100% !important;
             }
 
             .actions-bar {
                 display: block !important;
                 text-align: center !important;
-                margin-bottom: 20px !important;
+                margin: 0.5cm 0 !important;
             }
 
             .actions-bar h2 {
                 color: #000 !important;
-                font-size: 24pt !important;
+                font-size: 20pt !important;
                 margin: 0 !important;
             }
 
             .calendar-grid {
+                flex: 1 !important;
+                display: grid !important;
                 grid-template-columns: repeat(7, 1fr) !important;
+                grid-auto-rows: 1fr !important; /* Força todas as semanas a terem a mesma altura e caberem na tela */
                 gap: 0 !important;
-                border: 1pt solid #000 !important;
+                border: 0.5pt solid #000 !important;
                 background: #fff !important;
+                overflow: hidden !important;
             }
 
             .calendar-header-day {
-                background: #f0f0f0 !important;
+                background: #f8f8f8 !important;
                 color: #000 !important;
                 border: 0.5pt solid #000 !important;
-                padding: 8pt !important;
-                font-size: 10pt !important;
+                padding: 4pt !important;
+                font-size: 9pt !important;
                 text-transform: uppercase !important;
+                height: auto !important;
             }
 
             .calendar-day {
                 background: #fff !important;
                 border: 0.5pt solid #000 !important;
                 border-radius: 0 !important;
-                min-height: 2cm !important;
-                padding: 5pt !important;
+                min-height: 0 !important;
+                padding: 3pt !important;
                 box-shadow: none !important;
                 color: #000 !important;
-                page-break-inside: avoid;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
             }
 
             .day-number {
-                font-size: 14pt !important;
+                font-size: 11pt !important;
                 color: #000 !important;
+                font-weight: bold !important;
             }
 
             .day-info {
                 color: #666 !important;
-                font-size: 8pt !important;
+                font-size: 7pt !important;
             }
 
             .day-assignment {
-                background: #eee !important;
+                background: #f0f0f0 !important;
                 color: #000 !important;
-                border: 1pt solid #ccc !important;
+                border: 0.5pt solid #999 !important;
                 box-shadow: none !important;
-                margin-top: 5pt !important;
-                padding: 4pt !important;
-                font-size: 9pt !important;
-                justify-content: flex-start !important;
+                margin-top: 2pt !important;
+                padding: 2pt 4pt !important;
+                font-size: 8pt !important;
+                border-radius: 2pt !important;
+                display: block !important;
+                text-align: center !important;
             }
 
             .day-assignment i {
-                display: none !important; /* Hide icon for cleaner print */
+                display: none !important;
             }
 
             .holiday-name {
                 color: #cc0000 !important;
-                font-size: 8pt !important;
+                font-size: 7pt !important;
+                font-weight: bold !important;
+                margin-top: 2pt !important;
             }
 
             .blocked-week {
-                background: #fafafa !important;
-                opacity: 1 !important;
-            }
-
-            .blocked-week .day-info {
-                color: #999 !important;
+                background: #fdfdfd !important;
             }
         }
 
