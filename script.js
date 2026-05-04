@@ -293,15 +293,14 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
         }
     });
 
-    // 2. Preparar distribuição de pessoas (Rodízio)
-    const rotation = weekOffset % people.length;
-    const rotatedPeople = [...people.slice(rotation), ...people.slice(0, rotation)];
-    
+    // 2. Preparar distribuição de pessoas
     let assignmentsPerDay = {}; // Index do dia -> [pessoas]
     if (validDaysIndices.length > 0) {
-        rotatedPeople.forEach((person, idx) => {
-            // Rotacionar os SLOTS dos dias para que o dia "vazio" (se houver) varie
-            // e todos tenham a chance de pegar a sexta-feira.
+        people.forEach((person, idx) => {
+            // Rotacionar os SLOTS dos dias para que as pessoas "caminhem" pelos dias disponíveis.
+            // Se People == Days, elas trocam de lugar.
+            // Se People < Days, o dia vazio rotaciona.
+            // Se People > Days, a dupla que divide o dia rotaciona.
             const slotIdx = (idx + weekOffset) % validDaysIndices.length;
             const dayIdx = validDaysIndices[slotIdx];
             if (!assignmentsPerDay[dayIdx]) assignmentsPerDay[dayIdx] = [];
