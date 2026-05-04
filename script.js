@@ -294,15 +294,25 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
     });
 
     // 2. Preparar distribuição de pessoas
-    let assignmentsPerDay = {}; // Index do dia -> [pessoas]
+    let assignmentsPerDay = {};
     if (validDaysIndices.length > 0) {
-        people.forEach((person, idx) => {
-            // Rotacionar os SLOTS dos dias para que as pessoas "caminhem" pelos dias disponíveis.
-            // Se People == Days, elas trocam de lugar.
-            // Se People < Days, o dia vazio rotaciona.
-            // Se People > Days, a dupla que divide o dia rotaciona.
-            const slotIdx = (idx + weekOffset) % validDaysIndices.length;
-            const dayIdx = validDaysIndices[slotIdx];
+        // Criar uma semente baseada na data da semana e no offset para ser aleatório mas consistente
+        const weekSeed = (days[0].getTime() / 1000) + weekOffset;
+        
+        // Criar uma versão embaralhada dos dias permitidos para esta semana
+        let shuffledSlots = [...validDaysIndices];
+        for (let i = shuffledSlots.length - 1; i > 0; i--) {
+            // Pseudo-random baseado em seno para ser consistente sem precisar de biblioteca externa
+            const j = Math.floor(Math.abs(Math.sin(weekSeed + i) * 10000) % (i + 1));
+            [shuffledSlots[i], shuffledSlots[j]] = [shuffledSlots[j], shuffledSlots[i]];
+        }
+
+        // Também rotacionar a lista de pessoas para garantir que quem "sobra" ou "repete" mude
+        const personRotation = weekOffset % people.length;
+        const rotatedPeople = [...people.slice(personRotation), ...people.slice(0, personRotation)];
+
+        rotatedPeople.forEach((person, idx) => {
+            const dayIdx = shuffledSlots[idx % shuffledSlots.length];
             if (!assignmentsPerDay[dayIdx]) assignmentsPerDay[dayIdx] = [];
             assignmentsPerDay[dayIdx].push(person);
         });
