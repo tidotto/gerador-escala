@@ -300,7 +300,10 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
     let assignmentsPerDay = {}; // Index do dia -> [pessoas]
     if (validDaysIndices.length > 0) {
         rotatedPeople.forEach((person, idx) => {
-            const dayIdx = validDaysIndices[idx % validDaysIndices.length];
+            // Rotacionar os SLOTS dos dias para que o dia "vazio" (se houver) varie
+            // e todos tenham a chance de pegar a sexta-feira.
+            const slotIdx = (idx + weekOffset) % validDaysIndices.length;
+            const dayIdx = validDaysIndices[slotIdx];
             if (!assignmentsPerDay[dayIdx]) assignmentsPerDay[dayIdx] = [];
             assignmentsPerDay[dayIdx].push(person);
         });
