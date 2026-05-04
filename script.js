@@ -384,10 +384,10 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
     // 2. Preparar distribuição de pessoas
     let assignmentsPerDay = {};
     
+    // SÓ renderiza pessoas se a escala foi gerada manualmente OU se carregamos do banco
     if (savedScaleData) {
-        // Se temos dados salvos, usamos eles em vez de gerar
+        // Se temos dados salvos, usamos eles
         savedScaleData.forEach(item => {
-            // MySQL retorna YYYY-MM-DD. Vamos normalizar para string de comparação
             const itemDateStr = typeof item.data === 'string' ? item.data.substring(0, 10) : '';
             
             days.forEach((d, i) => {
@@ -395,15 +395,14 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
                 
                 if (itemDateStr === dStr) {
                     if (!assignmentsPerDay[i]) assignmentsPerDay[i] = [];
-                    // Evitar duplicatas no mesmo dia se houver erro no loop
                     if (!assignmentsPerDay[i].some(a => a.id === item.membro_id)) {
                         assignmentsPerDay[i].push({ id: item.membro_id, nome: item.nome });
                     }
                 }
             });
         });
-    } else if (validDaysIndices.length > 0) {
-        // Rotação normal...
+    } else if (isScaleGenerated && validDaysIndices.length > 0) {
+        // Rotação normal APENAS se isScaleGenerated for true
         people.forEach((person, idx) => {
             const slotIdx = (idx + weekOffset) % validDaysIndices.length;
             const dayIdx = validDaysIndices[slotIdx];
