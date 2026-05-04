@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Carregar equipes da API
     await loadTeams();
-    clearScale(); 
+    await checkAndLoadScale(); // Agora carrega a escala salva no início
 });
 
 async function loadTeams() {
@@ -382,14 +382,18 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
     if (savedScaleData) {
         // Se temos dados salvos, usamos eles em vez de gerar
         savedScaleData.forEach(item => {
-            const itemDate = new Date(item.data + 'T00:00:00'); // Garante fuso local
-            const dayStr = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
+            // MySQL retorna YYYY-MM-DD. Vamos normalizar para string de comparação
+            const itemDateStr = typeof item.data === 'string' ? item.data.substring(0, 10) : '';
             
             days.forEach((d, i) => {
                 const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                if (dayStr === dStr) {
+                
+                if (itemDateStr === dStr) {
                     if (!assignmentsPerDay[i]) assignmentsPerDay[i] = [];
-                    assignmentsPerDay[i].push({ id: item.membro_id, nome: item.nome });
+                    // Evitar duplicatas no mesmo dia se houver erro no loop
+                    if (!assignmentsPerDay[i].some(a => a.id === item.membro_id)) {
+                        assignmentsPerDay[i].push({ id: item.membro_id, nome: item.nome });
+                    }
                 }
             });
         });
