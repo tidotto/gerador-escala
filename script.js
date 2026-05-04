@@ -151,10 +151,13 @@ async function checkAndLoadScale() {
     if (!currentTeamId) return;
     
     const [year, month] = monthInput.value.split('-').map(Number);
+    console.log(`Buscando escala para Equipe: ${currentTeamId}, Mes: ${month}, Ano: ${year}`);
+    
     try {
         const response = await fetch(`${API_URL}/get-escala/${currentTeamId}/${year}/${month}`);
         const data = await response.json();
         
+        console.log("Dados recebidos da API:", data);
         const msg = document.getElementById('noDataMessage');
         
         if (data && data.length > 0) {
@@ -162,23 +165,22 @@ async function checkAndLoadScale() {
             isScaleGenerated = true;
             saveBtn.style.display = 'flex';
             
-            // Primeiro renderiza a grid (isso vai preencher os dias usando savedScaleData)
             renderMonthGrid();
             
-            // Depois mostra a mensagem de sucesso
             msg.style.display = 'block';
             msg.innerHTML = `
                 <div style="background: rgba(var(--accent-rgb), 0.1); padding: 1rem; border-radius: 12px; border: 1px solid var(--accent); margin-bottom: 1rem;">
                     <i class="ti ti-database-check" style="font-size: 2rem; color: var(--accent);"></i>
-                    <p><b>Escala Carregada!</b> Já existe uma escala salva para este mês.</p>
+                    <p><b>Escala Carregada!</b> Dados recuperados do banco de dados.</p>
                 </div>
             `;
         } else {
+            console.log("Nenhuma escala encontrada para este mês.");
             savedScaleData = null;
             isScaleGenerated = false;
             saveBtn.style.display = 'none';
             renderMonthGrid();
-            clearScale(); // Mostra a mensagem de instrução
+            clearScale();
         }
     } catch (err) {
         console.error('Erro ao buscar escala salva:', err);
@@ -386,12 +388,14 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
     
     // SÓ renderiza pessoas se a escala foi gerada manualmente OU se carregamos do banco
     if (savedScaleData) {
-        // Se temos dados salvos, usamos eles
         savedScaleData.forEach(item => {
-            const itemDateStr = typeof item.data === 'string' ? item.data.substring(0, 10) : '';
+            const itemDateStr = String(item.data).substring(0, 10);
             
             days.forEach((d, i) => {
-                const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const dStr = `${year}-${month}-${day}`;
                 
                 if (itemDateStr === dStr) {
                     if (!assignmentsPerDay[i]) assignmentsPerDay[i] = [];
