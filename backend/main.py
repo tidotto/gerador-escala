@@ -77,9 +77,23 @@ def get_members(equipe_id: int):
 
 @app.post("/salvar-escala")
 def save_scale(entries: List[ScaleEntry]):
+    if not entries: return {"status": "vazio"}
+    
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        # Pega o mês e ano do primeiro registro para limpar a escala antiga
+        first_date = entries[0].data
+        year = first_date.year
+        month = first_date.month
+        equipe_id = entries[0].equipe_id
+
+        # Deleta a escala antiga desse mês/equipe para evitar duplicatas (Lógica de Upsert)
+        cursor.execute(
+            "DELETE FROM escalas WHERE equipe_id = %s AND YEAR(data) = %s AND MONTH(data) = %s",
+            (equipe_id, year, month)
+        )
+
         for entry in entries:
             cursor.execute(
                 "INSERT INTO escalas (data, equipe_id, membro_id) VALUES (%s, %s, %s)",
@@ -92,6 +106,21 @@ def save_scale(entries: List[ScaleEntry]):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         conn.close()
+
+@app.get("/get-escala/{equipe_id}/{year}/{month}")
+def get_saved_scale(equipe_id: int, year: int, month: int):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    query = """
+        SELECT e.data, m.id as membro_id, m.nome 
+        FROM escalas e
+        JOIN membros m ON e.membro_id = m.id
+        WHERE e.equipe_id = %s AND YEAR(e.data) = %s AND MONTH(e.data) = %s
+    """
+    cursor.execute(query, (equipe_id, year, month))
+    scale = cursor.fetchall()
+    conn.close()
+    return scale
 
 @app.get("/ultimo-estado/{equipe_id}")
 def get_last_state(equipe_id: int):

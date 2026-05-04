@@ -21,6 +21,7 @@ let currentPickerYear = 2026;
 let isScaleGenerated = false; 
 let ignoredHolidays = new Set();
 let currentTeamId = null;
+let savedScaleData = null; // Armazena escala vinda do banco
 
 const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -119,8 +120,7 @@ function renderMonthGrid() {
             monthInput.value = `${currentPickerYear}-${currentMonthVal}`;
             updateMonthDisplay();
             monthPickerModal.classList.remove('active');
-            renderMonthGrid();
-            clearScale(); // Limpa ao trocar de mês
+            checkAndLoadScale(); // Verifica se já existe escala ao mudar mês
         };
         monthGrid.appendChild(btn);
     });
@@ -144,8 +144,43 @@ function shuffleArray(array) {
 teamSelect.addEventListener('change', async (e) => {
     const teamId = e.target.value;
     await selectTeam(teamId);
-    clearScale();
+    checkAndLoadScale();
 });
+
+async function checkAndLoadScale() {
+    if (!currentTeamId) return;
+    
+    const [year, month] = monthInput.value.split('-').map(Number);
+    try {
+        const response = await fetch(`${API_URL}/get-escala/${currentTeamId}/${year}/${month}`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            savedScaleData = data;
+            isScaleGenerated = true;
+            saveBtn.style.display = 'flex';
+            renderMonthGrid();
+            
+            // Mensagem de alerta discreta
+            const msg = document.getElementById('noDataMessage');
+            msg.style.display = 'block';
+            msg.innerHTML = `
+                <div style="background: rgba(var(--accent-rgb), 0.1); padding: 1rem; border-radius: 12px; border: 1px solid var(--accent);">
+                    <i class="ti ti-database-check" style="font-size: 2rem; color: var(--accent);"></i>
+                    <p><b>Escala Carregada!</b> Já existe uma escala salva para este mês. Você pode alterá-la e clicar em Salvar para atualizar.</p>
+                </div>
+            `;
+        } else {
+            savedScaleData = null;
+            isScaleGenerated = false;
+            saveBtn.style.display = 'none';
+            renderMonthGrid();
+            clearScale();
+        }
+    } catch (err) {
+        console.error('Erro ao buscar escala salva:', err);
+    }
+}
 
 // Adicionar ouvintes para os checkboxes de dias
 document.querySelectorAll('.weekday-checkbox').forEach(cb => {
@@ -250,8 +285,9 @@ function getHolidays(year) {
 // --- Gerador de Escala ---
 
 function generateScale() {
+    savedScaleData = null; // Força nova geração ignorando o banco
     isScaleGenerated = true;
-    saveBtn.style.display = 'flex'; // Mostra botão de salvar
+    saveBtn.style.display = 'flex'; 
     const [year, month] = monthInput.value.split('-').map(Number);
     const selectedMonth = month - 1; // 0-indexed
     
@@ -342,12 +378,24 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
 
     // 2. Preparar distribuição de pessoas
     let assignmentsPerDay = {};
-    if (validDaysIndices.length > 0) {
+    
+    if (savedScaleData) {
+        // Se temos dados salvos, usamos eles em vez de gerar
+        savedScaleData.forEach(item => {
+            const itemDate = new Date(item.data + 'T00:00:00'); // Garante fuso local
+            const dayStr = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
+            
+            days.forEach((d, i) => {
+                const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                if (dayStr === dStr) {
+                    if (!assignmentsPerDay[i]) assignmentsPerDay[i] = [];
+                    assignmentsPerDay[i].push({ id: item.membro_id, nome: item.nome });
+                }
+            });
+        });
+    } else if (validDaysIndices.length > 0) {
+        // Rotação normal...
         people.forEach((person, idx) => {
-            // Rotação Linear Estrita:
-            // Cada pessoa "caminha" um dia para frente a cada semana.
-            // Isso garante que em 4 semanas (se houver 4 dias), todos passem por todos os dias
-            // e ninguém repita o dia da semana no mesmo ciclo.
             const slotIdx = (idx + weekOffset) % validDaysIndices.length;
             const dayIdx = validDaysIndices[slotIdx];
             if (!assignmentsPerDay[dayIdx]) assignmentsPerDay[dayIdx] = [];
@@ -627,7 +675,8 @@ async function saveScaleToDB() {
 
         const result = await response.json();
         if (result.status === 'sucesso') {
-            alert('Escala salva com sucesso no MySQL!');
+            alert('Escala salva/atualizada com sucesso!');
+            checkAndLoadScale(); // Recarrega para garantir sincronia
         } else {
             alert('Erro ao salvar escala.');
         }
