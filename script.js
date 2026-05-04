@@ -155,19 +155,22 @@ async function checkAndLoadScale() {
         const response = await fetch(`${API_URL}/get-escala/${currentTeamId}/${year}/${month}`);
         const data = await response.json();
         
+        const msg = document.getElementById('noDataMessage');
+        
         if (data && data.length > 0) {
             savedScaleData = data;
             isScaleGenerated = true;
             saveBtn.style.display = 'flex';
+            
+            // Primeiro renderiza a grid (isso vai preencher os dias usando savedScaleData)
             renderMonthGrid();
             
-            // Mensagem de alerta discreta
-            const msg = document.getElementById('noDataMessage');
+            // Depois mostra a mensagem de sucesso
             msg.style.display = 'block';
             msg.innerHTML = `
-                <div style="background: rgba(var(--accent-rgb), 0.1); padding: 1rem; border-radius: 12px; border: 1px solid var(--accent);">
+                <div style="background: rgba(var(--accent-rgb), 0.1); padding: 1rem; border-radius: 12px; border: 1px solid var(--accent); margin-bottom: 1rem;">
                     <i class="ti ti-database-check" style="font-size: 2rem; color: var(--accent);"></i>
-                    <p><b>Escala Carregada!</b> Já existe uma escala salva para este mês. Você pode alterá-la e clicar em Salvar para atualizar.</p>
+                    <p><b>Escala Carregada!</b> Já existe uma escala salva para este mês.</p>
                 </div>
             `;
         } else {
@@ -175,7 +178,7 @@ async function checkAndLoadScale() {
             isScaleGenerated = false;
             saveBtn.style.display = 'none';
             renderMonthGrid();
-            clearScale();
+            clearScale(); // Mostra a mensagem de instrução
         }
     } catch (err) {
         console.error('Erro ao buscar escala salva:', err);
@@ -188,24 +191,16 @@ document.querySelectorAll('.weekday-checkbox').forEach(cb => {
 });
 
 function clearScale() {
-    // Reset grid (keep headers)
-    const headers = calendarGrid.querySelectorAll('.calendar-header-day');
-    calendarGrid.innerHTML = '';
-    headers.forEach(h => calendarGrid.appendChild(h));
-    
-    // Mostrar mensagem baseada no estado
-    document.getElementById('noDataMessage').style.display = 'block';
-    
-    if (!isScaleGenerated) {
+    // Apenas mostra a mensagem se não houver escala gerada nem salva
+    if (!isScaleGenerated && !savedScaleData) {
+        document.getElementById('noDataMessage').style.display = 'block';
         document.getElementById('noDataMessage').innerHTML = `
             <i class="ti ti-hand-click" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem; display: block;"></i>
             <p>Selecione a equipe e os filtros e clique em <b>Gerar Escala</b>.</p>
         `;
-    } else {
-        document.getElementById('noDataMessage').innerHTML = `
-            <i class="ti ti-click" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem; display: block;"></i>
-            <p>Ajuste os filtros e clique em <b>Gerar Escala</b> para atualizar.</p>
-        `;
+    } else if (!savedScaleData) {
+        // Se foi gerada mas não salva
+        document.getElementById('noDataMessage').style.display = 'none';
     }
 }
 
@@ -307,9 +302,19 @@ function generateScale() {
         document.getElementById('noDataMessage').style.display = 'none';
     }
 
-    // Algoritmo de Semanas por Maioria
-    // Encontrar o primeiro domingo da primeira semana que toca o mês
-    let currentDay = new Date(year, selectedMonth, 1);
+    calendarGrid.innerHTML = ''; // Limpa tudo
+    
+    // Recriar cabeçalhos (evita que sumam)
+    const daysOfWeek = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+    daysOfWeek.forEach(day => {
+        const h = document.createElement('div');
+        h.className = 'calendar-header-day';
+        h.innerText = day;
+        calendarGrid.appendChild(h);
+    });
+
+    const firstDayOfMonth = new Date(year, selectedMonth, 1);
+    let currentDay = new Date(firstDayOfMonth);
     currentDay.setDate(currentDay.getDate() - currentDay.getDay()); // Domingo da semana 1
 
     let weekOffset = 0;
