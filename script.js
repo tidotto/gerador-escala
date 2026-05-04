@@ -19,15 +19,18 @@ const calendarTitle = document.getElementById('calendarTitle');
 const copyBtn = document.getElementById('copyBtn');
 
 let currentPickerYear = 2026;
-let isScaleGenerated = false; // Flag para controlar estado da escala
+let isScaleGenerated = false; 
+let ignoredHolidays = new Set();
+
 const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+const holidayIgnoreList = document.getElementById('holidayIgnoreList');
+
 // Configuração inicial
 document.addEventListener('DOMContentLoaded', () => {
-    // Iniciar com mês atual mas escala vazia
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     currentPickerYear = now.getFullYear();
@@ -36,12 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPeople();
     renderMonthGrid();
     
-    // Atualizar título sem gerar
     const [y, m] = monthInput.value.split('-');
     const mName = monthNames[parseInt(m) - 1];
     calendarTitle.innerText = `${mName} ${y}`;
 
-    clearScale(); // Começar com a escala vazia e mensagem de instrução
+    clearScale(); 
 });
 
 // --- Custom Month Picker Logic ---
@@ -50,8 +52,6 @@ function updateMonthDisplay() {
     const [year, month] = monthInput.value.split('-');
     const monthName = monthNames[parseInt(month) - 1];
     selectedMonthDisplay.innerText = `${monthName} de ${year}`;
-    
-    // Sincronizar título da direita
     calendarTitle.innerText = `${monthName} ${year}`;
 }
 
@@ -248,7 +248,7 @@ function generateScale() {
             }
 
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            if (holidays[dateStr]) {
+            if (holidays[dateStr] && !ignoredHolidays.has(dateStr)) {
                 weekHasHoliday = true;
                 holidayDetails[i] = holidays[dateStr];
             }
@@ -282,10 +282,33 @@ function generateScale() {
 }
 
 function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
-    let personIndexInWeek = 0;
-
+    // 1. Identificar dias válidos para escala nesta semana
+    let validDaysIndices = [];
     days.forEach((date, i) => {
-        const dayOfWeek = i; // 0=Dom, 6=Sab
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const holidayName = ignoredHolidays.has(dateStr) ? null : holidayDetails[i];
+        const isWeekend = (i === 0 || i === 6);
+        if (!isWeekend && allowedDays.includes(i) && !hasHoliday && !holidayName) {
+            validDaysIndices.push(i);
+        }
+    });
+
+    // 2. Preparar distribuição de pessoas (Rodízio)
+    const rotation = weekOffset % people.length;
+    const rotatedPeople = [...people.slice(rotation), ...people.slice(0, rotation)];
+    
+    let assignmentsPerDay = {}; // Index do dia -> [pessoas]
+    if (validDaysIndices.length > 0) {
+        rotatedPeople.forEach((person, idx) => {
+            const dayIdx = validDaysIndices[idx % validDaysIndices.length];
+            if (!assignmentsPerDay[dayIdx]) assignmentsPerDay[dayIdx] = [];
+            assignmentsPerDay[dayIdx].push(person);
+        });
+    }
+
+    // 3. Renderizar os dias
+    days.forEach((date, i) => {
+        const dayOfWeek = i;
         const dayEl = document.createElement('div');
         dayEl.className = 'calendar-day';
         dayEl.dataset.week = days[0].toDateString();
@@ -293,7 +316,7 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
         dayEl.dataset.isWeekend = isWeekend;
 
         const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        const holidayName = holidayDetails[i];
+        const holidayName = ignoredHolidays.has(dateStr) ? null : holidayDetails[i];
 
         if (holidayName) dayEl.classList.add('holiday');
         if (hasHoliday) dayEl.classList.add('blocked-week');
@@ -308,29 +331,32 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
         dayEl.addEventListener('drop', handleDayDrop);
 
         if (holidayName) {
-            dayEl.innerHTML += `<div class="holiday-name">${holidayName}</div>`;
+            const hDiv = document.createElement('div');
+            hDiv.className = 'holiday-name';
+            hDiv.innerHTML = `<span>${holidayName}</span><button class="remove-holiday" title="Liberar semana"><i class="ti ti-x"></i></button>`;
+            hDiv.querySelector('button').onclick = (e) => {
+                e.stopPropagation();
+                ignoredHolidays.add(dateStr);
+                generateScale();
+            };
+            dayEl.appendChild(hDiv);
         }
 
-        if (!isWeekend && allowedDays.includes(dayOfWeek) && !hasHoliday && !holidayName) {
-            const person = people[(personIndexInWeek + weekOffset) % people.length];
-            const badge = document.createElement('div');
-            badge.className = 'day-assignment';
-            badge.draggable = true;
-            badge.innerHTML = `<i class="ti ti-home-heart"></i> ${person}`;
-            
-            badge.addEventListener('dragstart', handleDragStart);
-            badge.addEventListener('dragover', handleDragOver);
-            badge.addEventListener('drop', handleDrop);
-            badge.addEventListener('dragend', handleDragEnd);
-
-            dayEl.appendChild(badge);
-            personIndexInWeek++;
-        } else if (hasHoliday && !dayEl.dataset.isWeekend && allowedDays.includes(dayOfWeek)) {
-            dayEl.innerHTML += `
-                <div class="day-info" style="margin-top: 1rem; font-style: italic;">
-                    Bloqueado (Semana com feriado)
-                </div>
-            `;
+        // Adicionar Badges se houver atribuições
+        if (assignmentsPerDay[i]) {
+            assignmentsPerDay[i].forEach(person => {
+                const badge = document.createElement('div');
+                badge.className = 'day-assignment';
+                badge.draggable = true;
+                badge.innerHTML = `<i class="ti ti-home-heart"></i> ${person}`;
+                badge.addEventListener('dragstart', handleDragStart);
+                badge.addEventListener('dragover', handleDragOver);
+                badge.addEventListener('drop', handleDrop);
+                badge.addEventListener('dragend', handleDragEnd);
+                dayEl.appendChild(badge);
+            });
+        } else if (hasHoliday && !isWeekend && allowedDays.includes(dayOfWeek)) {
+            dayEl.innerHTML += `<div class="day-info" style="margin-top: 1rem; font-style: italic;">Bloqueado (Semana com feriado)</div>`;
         }
 
         calendarGrid.appendChild(dayEl);
@@ -363,13 +389,14 @@ copyBtn.addEventListener('click', () => {
         let hasAssignment = false;
 
         weekDays.forEach(day => {
-            const assignment = day.querySelector('.day-assignment');
-            if (assignment) {
+            const assignments = day.querySelectorAll('.day-assignment');
+            if (assignments.length > 0) {
                 hasAssignment = true;
                 const shortName = day.querySelector('.day-info').innerText;
                 const fullName = getFullDayName(shortName);
                 const dateFull = day.querySelector('.day-date-hidden').innerText;
-                weekText += ` - ${fullName} (${dateFull}) : ${assignment.innerText.trim()}\n`;
+                const names = Array.from(assignments).map(a => a.innerText.trim()).join(', ');
+                weekText += ` - ${fullName} (${dateFull}) : ${names}\n`;
             }
         });
 
@@ -429,6 +456,16 @@ function handleDrop(e) {
         return false;
     }
 
+    if (targetDay.classList.contains('holiday')) {
+        alert('Não é permitido home office em feriados.');
+        return false;
+    }
+
+    if (targetDay.classList.contains('blocked-week')) {
+        alert('Esta semana está bloqueada devido a um feriado.');
+        return false;
+    }
+
     if (dragSrcEl !== this) {
         // Swap content
         const sourceHTML = dragSrcEl.innerHTML;
@@ -458,11 +495,17 @@ function handleDayDrop(e) {
         return false;
     }
 
-    const existingBadge = targetDay.querySelector('.day-assignment');
-    
-    // Se soltar no dia e ele estiver vazio (ou tiver badge, handleDrop cuidará se soltar no badge)
-    // Mas se soltar no dia, e o dia não tiver badge:
-    if (!existingBadge && dragSrcEl) {
+    if (targetDay.classList.contains('holiday')) {
+        alert('Não é permitido home office em feriados.');
+        return false;
+    }
+
+    if (targetDay.classList.contains('blocked-week')) {
+        alert('Esta semana está bloqueada devido a um feriado.');
+        return false;
+    }
+
+    if (dragSrcEl) {
         targetDay.appendChild(dragSrcEl);
     }
 }
