@@ -46,6 +46,10 @@ class ScaleEntry(BaseModel):
     equipe_id: int
 
 # Endpoints
+@app.get("/")
+def read_root():
+    return {"status": "Online", "message": "API de Escala Home Office - Bem-vindo!"}
+
 @app.get("/equipes")
 def get_teams():
     conn = get_db_connection()
