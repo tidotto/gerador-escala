@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Escala Home Office — Aurora DS</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Syne:wght@400..800&display=swap" rel="stylesheet">
+    
+    <!-- Aurora DS CSS -->
+    <link rel="stylesheet" href="https://tiago5155.c34.integrator.host/ds-aurora/css/tokens.css">
+    <link rel="stylesheet" href="https://tiago5155.c34.integrator.host/ds-aurora/css/base.css">
+    <link rel="stylesheet" href="https://tiago5155.c34.integrator.host/ds-aurora/css/components.css">
+    <link rel="stylesheet" href="https://tiago5155.c34.integrator.host/ds-aurora/css/animations.css">
+    <link rel="stylesheet" href="https://tiago5155.c34.integrator.host/ds-aurora/css/icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.35.0/tabler-icons.min.css">
+
+    <style>
+        :root {
+            --sidebar-width: 350px;
+        }
+
+        body {
+            background-color: #000000;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(255, 71, 126, 0.1) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(0, 245, 212, 0.1) 0%, transparent 40%);
+            color: #ffffff;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #070707;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 2.5rem;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 1rem;
+            color: var(--accent);
+            pointer-events: none;
+            font-size: 1.2rem;
+        }
+
+        .input {
+            background: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            color: #fff !important;
+            padding-left: 3rem !important;
+            height: 3.5rem !important;
+            border-radius: 0.75rem !important;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none; /* Remove seta padrão */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        .input:hover {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        .input:focus {
+            border-color: var(--cyan) !important;
+            box-shadow: 0 0 0 2px var(--cyan-soft) !important;
+        }
+
+        /* Dropdown options fix */
+        select.input option {
+            background-color: #111;
+            color: #fff;
+        }
+
+        .label {
+            color: rgba(255, 255, 255, 0.5) !important;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            display: block;
+            font-weight: 700;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .app-header {
+            margin-bottom: 3rem;
+        }
+
+        .app-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .config-section {
+            margin-bottom: 2rem;
+        }
+
+        .config-section h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .person-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            margin-bottom: 0.5rem;
+            margin-right: 0.5rem;
+            font-size: 0.875rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .person-tag button {
+            background: none;
+            border: none;
+            color: var(--err);
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .weekday-picker {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .weekday-checkbox {
+            display: none;
+        }
+
+        .weekday-label {
+            display: block;
+            padding: 0.5rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .weekday-checkbox:checked + .weekday-label {
+            background: var(--cyan-soft);
+            color: var(--cyan);
+            border-color: var(--cyan);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1rem;
+        }
+
+        .calendar-day {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 1rem;
+            min-height: 120px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .calendar-day:hover:not(.empty) {
+            transform: translateY(-8px);
+            border-color: var(--cyan);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+        }
+
+        .calendar-day:hover:not(.empty) {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+        }
+
+        .calendar-day.empty {
+            background: transparent;
+            border: none;
+        }
+
+        .calendar-day.holiday {
+            border-color: var(--err);
+            background: rgba(255, 77, 77, 0.05);
+        }
+
+        .calendar-day.holiday::after {
+            content: 'FERIADO';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-15deg);
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: var(--err);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        .calendar-day.blocked-week {
+            opacity: 0.5;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .day-number {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .day-info {
+            font-size: 0.8rem;
+            color: var(--text-mute);
+        }
+
+        .day-assignment {
+            margin-top: auto;
+            background: var(--cyan-soft);
+            color: var(--cyan);
+            padding: 0.5rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border: 1px solid rgba(0, 245, 212, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            opacity: 1 !important;
+            visibility: visible !important;
+            width: 100%;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .day-assignment:hover {
+            transform: translateY(-2px);
+            background: var(--cyan);
+            color: var(--bg-main);
+            box-shadow: 0 8px 24px var(--cyan-glow);
+        }
+
+        .holiday-name {
+            font-size: 0.75rem;
+            color: var(--err);
+            margin-top: 0.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Custom Month Picker */
+        .month-picker-modal {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            margin-top: 0.5rem;
+        }
+
+        .month-picker-modal.active {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+        }
+
+        .picker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .month-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid transparent;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .month-btn:hover {
+            background: var(--cyan-soft);
+            color: var(--cyan);
+        }
+
+        .month-btn.selected {
+            background: var(--cyan);
+            color: #000;
+            font-weight: 700;
+        }
+
+        .day-assignment.dragging {
+            border: 2px dashed var(--accent);
+            opacity: 0.5;
+            transform: scale(0.95);
+        }
+
+        .day-assignment i {
+            pointer-events: none;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                padding: 1.5rem;
+            }
+            .calendar-grid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+            .calendar-day {
+                min-height: auto;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+
+            body {
+                background: #fff !important;
+                color: #000 !important;
+                display: block !important;
+            }
+
+            .sidebar, .actions-bar button, #noDataMessage, .header-main {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 0 !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+            }
+
+            .actions-bar {
+                display: block !important;
+                text-align: center !important;
+                margin-bottom: 20px !important;
+            }
+
+            .actions-bar h2 {
+                color: #000 !important;
+                font-size: 24pt !important;
+                margin: 0 !important;
+            }
+
+            .calendar-grid {
+                grid-template-columns: repeat(7, 1fr) !important;
+                gap: 0 !important;
+                border: 1pt solid #000 !important;
+                background: #fff !important;
+            }
+
+            .calendar-header-day {
+                background: #f0f0f0 !important;
+                color: #000 !important;
+                border: 0.5pt solid #000 !important;
+                padding: 8pt !important;
+                font-size: 10pt !important;
+                text-transform: uppercase !important;
+            }
+
+            .calendar-day {
+                background: #fff !important;
+                border: 0.5pt solid #000 !important;
+                border-radius: 0 !important;
+                min-height: 2cm !important;
+                padding: 5pt !important;
+                box-shadow: none !important;
+                color: #000 !important;
+                page-break-inside: avoid;
+            }
+
+            .day-number {
+                font-size: 14pt !important;
+                color: #000 !important;
+            }
+
+            .day-info {
+                color: #666 !important;
+                font-size: 8pt !important;
+            }
+
+            .day-assignment {
+                background: #eee !important;
+                color: #000 !important;
+                border: 1pt solid #ccc !important;
+                box-shadow: none !important;
+                margin-top: 5pt !important;
+                padding: 4pt !important;
+                font-size: 9pt !important;
+                justify-content: flex-start !important;
+            }
+
+            .day-assignment i {
+                display: none !important; /* Hide icon for cleaner print */
+            }
+
+            .holiday-name {
+                color: #cc0000 !important;
+                font-size: 8pt !important;
+            }
+
+            .blocked-week {
+                background: #fafafa !important;
+                opacity: 1 !important;
+            }
+
+            .blocked-week .day-info {
+                color: #999 !important;
+            }
+        }
+
+        /* Glass effect for active week */
+        .active-week {
+            background: rgba(0, 245, 212, 0.03);
+            border: 1px solid rgba(0, 245, 212, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="config-section" data-reveal="left">
+            <h3><i class="ti ti-calendar-month"></i> Período</h3>
+            <div class="form-group" id="monthPickerGroup">
+                <label class="label">Mês e Ano</label>
+                <div class="input-wrapper" id="customMonthToggle">
+                    <i class="ti ti-calendar-event"></i>
+                    <div id="selectedMonthDisplay" class="input" style="display: flex; align-items: center;">Maio de 2026</div>
+                    <input type="hidden" id="monthInput" value="2026-05">
+                </div>
+                
+                <div class="month-picker-modal" id="monthPickerModal">
+                    <div class="picker-header">
+                        <button class="year-nav" id="prevYear"><i class="ti ti-chevron-left"></i></button>
+                        <span id="pickerYear">2026</span>
+                        <button class="year-nav" id="nextYear"><i class="ti ti-chevron-right"></i></button>
+                    </div>
+                    <div class="picker-grid" id="monthGrid">
+                        <!-- Meses gerados via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-section" data-reveal="left" data-delay="100">
+            <h3><i class="ti ti-users"></i> Equipe</h3>
+            <div class="form-group">
+                <label class="label">Selecione a Equipe</label>
+                <div class="input-wrapper">
+                    <i class="ti ti-users-group"></i>
+                    <select id="teamSelect" class="input">
+                        <option value="sistemas">Sistemas</option>
+                        <option value="dados">Dados</option>
+                    </select>
+                </div>
+            </div>
+            <div id="peopleList" style="margin-top: 1rem;">
+                <!-- Pessoas aparecerão aqui -->
+            </div>
+        </div>
+
+        <div class="config-section" data-reveal="left" data-delay="200">
+            <h3><i class="ti ti-calendar-event"></i> Dias Permitidos</h3>
+            <div class="weekday-picker">
+                <div>
+                    <input type="checkbox" id="wd-1" class="weekday-checkbox" value="1" checked>
+                    <label for="wd-1" class="weekday-label">Segunda</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="wd-2" class="weekday-checkbox" value="2" checked>
+                    <label for="wd-2" class="weekday-label">Terça</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="wd-3" class="weekday-checkbox" value="3" checked>
+                    <label for="wd-3" class="weekday-label">Quarta</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="wd-4" class="weekday-checkbox" value="4" checked>
+                    <label for="wd-4" class="weekday-label">Quinta</label>
+                </div>
+                <div>
+                    <input type="checkbox" id="wd-5" class="weekday-checkbox" value="5" checked>
+                    <label for="wd-5" class="weekday-label">Sexta</label>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-accent btn-xl" style="width: 100%; margin-top: 2rem;" id="generateBtn" data-magnetic>
+            <i class="ti ti-refresh"></i> Gerar Escala
+        </button>
+    </aside>
+
+    <main class="main-content">
+        <header class="app-header" data-reveal="top">
+            <h1>Gerador de Escala</h1>
+            <p class="text-mute">Home office justo, organizado e sem conflitos com feriados.</p>
+        </header>
+
+        <div class="actions-bar" data-reveal="fade">
+            <h2 id="calendarTitle" style="font-family: 'Syne';"></h2>
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn btn-outline btn-sm" onclick="window.print()">
+                    <i class="ti ti-printer"></i> Imprimir
+                </button>
+                <button class="btn btn-cyan btn-sm" id="copyBtn">
+                    <i class="ti ti-copy"></i> Copiar Texto
+                </button>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid">
+            <!-- Cabeçalho -->
+            <div class="calendar-header-day">DOM</div>
+            <div class="calendar-header-day">SEG</div>
+            <div class="calendar-header-day">TER</div>
+            <div class="calendar-header-day">QUA</div>
+            <div class="calendar-header-day">QUI</div>
+            <div class="calendar-header-day">SEX</div>
+            <div class="calendar-header-day">SÁB</div>
+            
+            <!-- Dias serão gerados aqui -->
+        </div>
+
+        <div id="noDataMessage" class="card-glass" style="padding: 3rem; text-align: center; margin-top: 2rem; display: block;">
+            <i class="ti ti-hand-click" style="font-size: 3rem; color: var(--accent); margin-bottom: 1rem; display: block;"></i>
+            <p>Selecione a equipe e os filtros e clique em <b>Gerar Escala</b>.</p>
+        </div>
+    </main>
+
+    <script src="https://tiago5155.c34.integrator.host/ds-aurora/js/aurora.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
