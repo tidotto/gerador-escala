@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
     currentPickerYear = now.getFullYear();
     monthInput.value = `${currentPickerYear}-${month}`;
     updateMonthDisplay();
+    // Inicia com a equipe de sistemas embaralhada
+    people = shuffleArray([...teams.sistemas]);
     renderPeople();
     renderMonthGrid();
     
@@ -94,9 +96,20 @@ document.getElementById('nextYear').onclick = (e) => { e.stopPropagation(); curr
 
 // --- Event Listeners ---
 
+function shuffleArray(array) {
+    let currentIndex = array.length, randomIndex;
+    while (currentIndex !== 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+    }
+    return array;
+}
+
 teamSelect.addEventListener('change', (e) => {
     const selectedTeam = e.target.value;
-    people = [...teams[selectedTeam]];
+    // Agora embaralha a equipe ao selecionar
+    people = shuffleArray([...teams[selectedTeam]]);
     renderPeople();
     clearScale(); // Limpa ao trocar de equipe
 });
