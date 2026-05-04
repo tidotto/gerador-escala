@@ -656,17 +656,20 @@
             <p class="text-mute">Home office justo, organizado e sem conflitos com feriados.</p>
         </header>
 
-        <div class="actions-bar" data-reveal="fade">
-            <h2 id="calendarTitle" style="font-family: 'Syne';"></h2>
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn btn-outline btn-sm" onclick="window.print()">
-                    <i class="ti ti-printer"></i> Imprimir
-                </button>
-                <button class="btn btn-cyan btn-sm" id="copyBtn">
-                    <i class="ti ti-copy"></i> Copiar Texto
-                </button>
+            <div class="actions-bar">
+                <h2 id="calendarTitle">Maio 2026</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-secondary" id="saveBtn" style="display: none;">
+                        <i class="ti ti-database-export"></i> SALVAR NO BANCO
+                    </button>
+                    <button class="btn btn-outline" id="copyBtn">
+                        <i class="ti ti-copy"></i> COPIAR TEXTO
+                    </button>
+                    <button class="btn btn-primary" id="generateBtn">
+                        <i class="ti ti-calendar-plus"></i> GERAR ESCALA
+                    </button>
+                </div>
             </div>
-        </div>
 
         <div class="calendar-grid" id="calendarGrid">
             <!-- Cabeçalho -->

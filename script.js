@@ -1,9 +1,7 @@
-const teams = {
-    sistemas: ['Bernardo', 'Tiago', 'Yuri'],
-    dados: ['Diego', 'Fernando', 'Gabriel', 'Yorton']
-};
+const API_URL = 'https://dotto.dev.br/api';
+let teams = {}; // Será populado via API
 
-let people = [...teams.sistemas];
+let people = [];
 const peopleListEl = document.getElementById('peopleList');
 const teamSelect = document.getElementById('teamSelect');
 const monthInput = document.getElementById('monthInput');
@@ -17,10 +15,12 @@ const generateBtn = document.getElementById('generateBtn');
 const calendarGrid = document.getElementById('calendarGrid');
 const calendarTitle = document.getElementById('calendarTitle');
 const copyBtn = document.getElementById('copyBtn');
+const saveBtn = document.getElementById('saveBtn');
 
 let currentPickerYear = 2026;
 let isScaleGenerated = false; 
 let ignoredHolidays = new Set();
+let currentTeamId = null;
 
 const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -30,23 +30,58 @@ const monthNames = [
 const holidayIgnoreList = document.getElementById('holidayIgnoreList');
 
 // Configuração inicial
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const now = new Date();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     currentPickerYear = now.getFullYear();
     monthInput.value = `${currentPickerYear}-${month}`;
     updateMonthDisplay();
-    // Inicia com a equipe de sistemas embaralhada
-    people = shuffleArray([...teams.sistemas]);
-    renderPeople();
     renderMonthGrid();
     
     const [y, m] = monthInput.value.split('-');
     const mName = monthNames[parseInt(m) - 1];
     calendarTitle.innerText = `${mName} ${y}`;
 
+    // Carregar equipes da API
+    await loadTeams();
     clearScale(); 
 });
+
+async function loadTeams() {
+    try {
+        const response = await fetch(`${API_URL}/equipes`);
+        const data = await response.json();
+        
+        teamSelect.innerHTML = '';
+        data.forEach(team => {
+            const opt = document.createElement('option');
+            opt.value = team.id;
+            opt.innerText = team.nome;
+            teamSelect.appendChild(opt);
+        });
+
+        // Carregar a primeira equipe por padrão
+        if (data.length > 0) {
+            await selectTeam(data[0].id);
+        }
+    } catch (err) {
+        console.error('Erro ao carregar equipes:', err);
+    }
+}
+
+async function selectTeam(teamId) {
+    try {
+        currentTeamId = teamId;
+        const response = await fetch(`${API_URL}/membros/${teamId}`);
+        const data = await response.json();
+        
+        // Formatar para o formato esperado pelo gerador
+        people = shuffleArray(data.map(m => ({ id: m.id, nome: m.nome, ausencias: m.ausencias || [] })));
+        renderPeople();
+    } catch (err) {
+        console.error('Erro ao carregar membros:', err);
+    }
+}
 
 // --- Custom Month Picker Logic ---
 
@@ -106,12 +141,10 @@ function shuffleArray(array) {
     return array;
 }
 
-teamSelect.addEventListener('change', (e) => {
-    const selectedTeam = e.target.value;
-    // Agora embaralha a equipe ao selecionar
-    people = shuffleArray([...teams[selectedTeam]]);
-    renderPeople();
-    clearScale(); // Limpa ao trocar de equipe
+teamSelect.addEventListener('change', async (e) => {
+    const teamId = e.target.value;
+    await selectTeam(teamId);
+    clearScale();
 });
 
 // Adicionar ouvintes para os checkboxes de dias
@@ -151,7 +184,7 @@ function renderPeople() {
         const tag = document.createElement('div');
         tag.className = 'person-tag';
         tag.innerHTML = `
-            <span>${person}</span>
+            <span>${person.nome}</span>
             <button onclick="removePerson(${index})"><i class="ti ti-x"></i></button>
         `;
         peopleListEl.appendChild(tag);
@@ -217,7 +250,8 @@ function getHolidays(year) {
 // --- Gerador de Escala ---
 
 function generateScale() {
-    isScaleGenerated = true; 
+    isScaleGenerated = true;
+    saveBtn.style.display = 'flex'; // Mostra botão de salvar
     const [year, month] = monthInput.value.split('-').map(Number);
     const selectedMonth = month - 1; // 0-indexed
     
@@ -369,7 +403,8 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
                 const badge = document.createElement('div');
                 badge.className = 'day-assignment';
                 badge.draggable = true;
-                badge.innerHTML = `<i class="ti ti-home-heart"></i> ${person}`;
+                badge.dataset.personId = person.id;
+                badge.innerHTML = `<i class="ti ti-home-heart"></i> ${person.nome}`;
                 badge.addEventListener('dragstart', handleDragStart);
                 badge.addEventListener('dragover', handleDragOver);
                 badge.addEventListener('drop', handleDrop);
@@ -551,3 +586,58 @@ function getFullDayName(short) {
     };
     return map[short] || short;
 }
+async function saveScaleToDB() {
+    if (!currentTeamId) return alert('Selecione uma equipe primeiro.');
+
+    const assignments = [];
+    const days = calendarGrid.querySelectorAll('.calendar-day');
+
+    days.forEach(day => {
+        const dateRaw = day.dataset.week; // Referência da semana
+        // Na verdade, precisamos da data exata do dia. 
+        // Vamos extrair do span invisível ou reconstruir.
+        const dateStr = day.querySelector('.day-date-hidden')?.innerText;
+        if (!dateStr) return;
+
+        const [d, m] = dateStr.split('/');
+        const year = currentPickerYear;
+        const formattedDate = `${year}-${m}-${d}`;
+
+        const badges = day.querySelectorAll('.day-assignment');
+        badges.forEach(badge => {
+            assignments.push({
+                data: formattedDate,
+                equipe_id: parseInt(currentTeamId),
+                membro_id: parseInt(badge.dataset.personId)
+            });
+        });
+    });
+
+    if (assignments.length === 0) return alert('Nenhuma escala para salvar.');
+
+    try {
+        saveBtn.disabled = true;
+        saveBtn.innerText = 'SALVANDO...';
+
+        const response = await fetch(`${API_URL}/salvar-escala`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(assignments)
+        });
+
+        const result = await response.json();
+        if (result.status === 'sucesso') {
+            alert('Escala salva com sucesso no MySQL!');
+        } else {
+            alert('Erro ao salvar escala.');
+        }
+    } catch (err) {
+        console.error('Erro:', err);
+        alert('Erro de conexão com a API.');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="ti ti-database-export"></i> SALVAR NO BANCO';
+    }
+}
+
+saveBtn.addEventListener('click', saveScaleToDB);
