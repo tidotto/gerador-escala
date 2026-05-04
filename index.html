@@ -658,14 +658,17 @@
 
             <div class="actions-bar">
                 <h2 id="calendarTitle">Maio 2026</h2>
-                <div style="display: flex; gap: 1rem;">
-                    <button class="btn btn-secondary" id="saveBtn" style="display: none;">
+                <div style="display: flex; gap: 0.8rem; align-items: center;">
+                    <button class="btn btn-outline btn-sm" onclick="window.print()">
+                        <i class="ti ti-printer"></i> IMPRIMIR
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="saveBtn" style="display: none;">
                         <i class="ti ti-database-export"></i> SALVAR NO BANCO
                     </button>
-                    <button class="btn btn-outline" id="copyBtn">
+                    <button class="btn btn-outline btn-sm" id="copyBtn">
                         <i class="ti ti-copy"></i> COPIAR TEXTO
                     </button>
-                    <button class="btn btn-primary" id="generateBtn">
+                    <button class="btn btn-primary btn-sm" id="generateBtn">
                         <i class="ti ti-calendar-plus"></i> GERAR ESCALA
                     </button>
                 </div>
