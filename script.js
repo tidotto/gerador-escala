@@ -333,13 +333,19 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
         if (holidayName) {
             const hDiv = document.createElement('div');
             hDiv.className = 'holiday-name';
-            hDiv.innerHTML = `<span>${holidayName}</span><button class="remove-holiday" title="Liberar semana"><i class="ti ti-x"></i></button>`;
-            hDiv.querySelector('button').onclick = (e) => {
+            hDiv.innerText = holidayName;
+            dayEl.appendChild(hDiv);
+
+            const btn = document.createElement('button');
+            btn.className = 'remove-holiday';
+            btn.title = 'Ignorar feriado';
+            btn.innerHTML = '<i class="ti ti-x"></i>';
+            btn.onclick = (e) => {
                 e.stopPropagation();
                 ignoredHolidays.add(dateStr);
                 generateScale();
             };
-            dayEl.appendChild(hDiv);
+            dayEl.appendChild(btn);
         }
 
         // Adicionar Badges se houver atribuições
@@ -355,8 +361,6 @@ function renderWeek(days, hasHoliday, holidayDetails, weekOffset, allowedDays) {
                 badge.addEventListener('dragend', handleDragEnd);
                 dayEl.appendChild(badge);
             });
-        } else if (hasHoliday && !isWeekend && allowedDays.includes(dayOfWeek)) {
-            dayEl.innerHTML += `<div class="day-info" style="margin-top: 1rem; font-style: italic;">Bloqueado (Semana com feriado)</div>`;
         }
 
         calendarGrid.appendChild(dayEl);
